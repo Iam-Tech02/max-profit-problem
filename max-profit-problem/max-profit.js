@@ -1,68 +1,65 @@
-function getMaxProfitPlans(totalTime) {
+function getMaxProfitPlansDP(totalTime) {
   const buildings = {
     T: { time: 5, earning: 1500 },
     P: { time: 4, earning: 1000 },
-    C: { time: 10, earning: 3000 },
+    C: { time: 10, earning: 3000 }, 
   };
 
-  let maxProfit = 0;
-  const plans = [];
+  const dp = Array(totalTime + 1).fill(null).map(() => []);
+  dp[0] = [{ T: 0, P: 0, C: 0, earnings: 0 }];
 
-  for (let t = 0; t <= Math.floor(totalTime / buildings.T.time); t++) {
-    for (let p = 0; p <= Math.floor(totalTime / buildings.P.time); p++) {
-      for (let c = 0; c <= Math.floor(totalTime / buildings.C.time); c++) {
-        const totalBuildTime =
-          t * buildings.T.time + p * buildings.P.time + c * buildings.C.time;
-        if (totalBuildTime > totalTime) continue;
+  let maxEarnings = 0;
 
-        const order = [];
+  for (let t = 0; t <= totalTime; t++) {
+    for (const plan of dp[t]) {
+      for (const b in buildings) {
+        const { time: buildTime, earning } = buildings[b];
+        const endTime = t + buildTime;
 
-        for (let i = 0; i < t; i++) order.push("T");
-        for (let i = 0; i < p; i++) order.push("P");
-        for (let i = 0; i < c; i++) order.push("C");
+        if (endTime <= totalTime) {
+          const remaining = totalTime - endTime;
+          const newEarning = plan.earnings + earning * remaining;
 
-        let usedTime = 0;
-        let profit = 0;
-
-        for (const type of order) {
-          const { time, earning } = buildings[type];
-          if (usedTime + time > totalTime) break;
-          usedTime += time;
-          const earningTime = totalTime - usedTime;
-          profit += earningTime * earning;
-        }
-
-        if (profit > maxProfit) {
-          maxProfit = profit;
-          plans.length = 0;
-          plans.push({ T: t, P: p, C: c });
-        } else if (profit === maxProfit) {
-          plans.push({ T: t, P: p, C: c });
+          const newPlan = {
+            T: plan.T,
+            P: plan.P,
+            C: plan.C,
+            earnings: newEarning,
+          };
+          newPlan[b]++;
+          if (newPlan.earnings > maxEarnings) {
+            dp[endTime] = [newPlan];
+            maxEarnings = newPlan.earnings;
+          } else if (newPlan.earnings === maxEarnings) {
+            dp[endTime].push(newPlan);
+          }
         }
       }
     }
   }
 
+  const allPlans = [];
+  for (const plans of dp) {
+    for (const plan of plans) {
+      if (plan.earnings === maxEarnings) {
+        allPlans.push(plan);
+      }
+    }
+  }
+
   return {
-    earnings: maxProfit,
-    solutions: plans,
+    earnings: maxEarnings,
+    solutions: allPlans.map(({ T, P, C }) => ({ T, P, C })),
   };
 }
-const testCases = [7,8,13];
-testCases.forEach((time) => {
-  const { earnings, solutions } = getMaxProfitPlans(time);
-  solutions.forEach((plan, index) => {
-    console.log(`Time Unit: ${time}`);
-    console.log(`Earnings: $${earnings}`);
-    console.log(`Solution ${index + 1}`);
-    console.log(`  → T: ${plan.T}`);
-    console.log(`  → P: ${plan.P}`);
-    console.log(`  → C: ${plan.C}`);
+
+
+[7, 8, 13, 49].forEach((time) => {
+  const { earnings, solutions } = getMaxProfitPlansDP(time);
+  console.log(`\nTime Unit: ${time}`);
+  console.log(`Earnings: $${earnings}`);
+  console.log(`Solutions:`);
+  solutions.forEach((plan, i) => {
+    console.log(` ${i + 1}. T: ${plan.T} P: ${plan.P} C: ${plan.C}`);
   });
 });
-
-
-
-
-
-
